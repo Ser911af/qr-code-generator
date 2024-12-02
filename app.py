@@ -30,14 +30,14 @@ if st.button("Generar QR"):
         # Crear la imagen del código QR con colores personalizados
         img = qr.make_image(fill_color=fill_color, back_color=back_color)
 
-        # Mostrar la imagen en la app
-        st.image(img, caption="Código QR generado")
-        st.success("¡Código QR generado exitosamente!")
-
-        # Convertir la imagen a bytes para descarga
+        # Convertir la imagen a un formato compatible (bytes)
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
+
+        # Mostrar la imagen en la app
+        st.image(buffer, caption="Código QR generado")
+        st.success("¡Código QR generado exitosamente!")
 
         # Botón para descargar el código QR
         st.download_button(
@@ -48,4 +48,3 @@ if st.button("Generar QR"):
         )
     else:
         st.error("Por favor, ingresa un enlace válido.")
-
