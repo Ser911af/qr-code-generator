@@ -37,17 +37,16 @@ if st.button("Generar QR"):
         img.save(buffer_png, format="PNG")
         buffer_png.seek(0)
 
-        # Convertir la imagen a un formato PDF
+        # Convertir la imagen a un archivo PDF
         buffer_pdf = BytesIO()
         pdf_canvas = canvas.Canvas(buffer_pdf, pagesize=letter)
-        img_temp = BytesIO()
-        img.save(img_temp, format="PNG")
-        img_temp.seek(0)
-        pil_image = Image.open(img_temp)
 
-        # Ajustar el tamaño en el PDF
-        width, height = pil_image.size
-        pdf_canvas.drawImage(img_temp, 100, 500, width=200, height=200)
+        # Guardar la imagen como archivo temporal para usarla en el PDF
+        temp_image_path = "/tmp/qr_code_temp.png"
+        img.save(temp_image_path, format="PNG")
+
+        # Insertar la imagen en el PDF
+        pdf_canvas.drawImage(temp_image_path, 100, 500, width=200, height=200)
         pdf_canvas.save()
         buffer_pdf.seek(0)
 
@@ -66,9 +65,4 @@ if st.button("Generar QR"):
         # Botón para descargar como PDF
         st.download_button(
             label="Descargar como PDF",
-            data=buffer_pdf,
-            file_name="codigo_qr.pdf",
-            mime="application/pdf"
-        )
-    else:
-        st.error("Por favor, ingresa un enlace válido.")
+          
