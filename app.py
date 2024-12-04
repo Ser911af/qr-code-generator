@@ -1,71 +1,68 @@
 import streamlit as st
 import qrcode
+from PIL import Image
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from PIL import Image
+import os
 
-# Título de la app
+# Función para generar el código QR
+def generar_qr(link, fill_color="black", back_color="white"):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(link)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color=fill_color, back_color=back_color)
+    return img
+
+# Interfaz en Streamlit
 st.title("Generador de Códigos QR")
+link = st.text_input("Introduce el enlace:")
+fill_color = st.color_picker("Elige el color del QR", "#000000")
+back_color = st.color_picker("Elige el color de fondo", "#FFFFFF")
 
-# Entrada para el enlace
-link = st.text_input("Introduce un enlace para generar el código QR:")
-
-# Opciones de personalización
-color_frontal = st.color_picker("Elige el color del código QR:", "#000000")
-color_fondo = st.color_picker("Elige el color de fondo del código QR:", "#FFFFFF")
-
-# Botón para generar el código QR
 if st.button("Generar QR"):
-    if link.strip():  # Verificar que el enlace no esté vacío
-        # Crear el código QR
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(link)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color=color_frontal, back_color=color_fondo)
-
-        # Convertir la imagen en un objeto BytesIO para Streamlit
+    if link.strip():
+        # Generar QR
+        img = generar_qr(link, fill_color=fill_color, back_color=back_color)
+        
+        # Mostrar imagen QR
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
-
-        # Mostrar la imagen en Streamlit
         st.image(buffer, caption="Código QR generado")
 
-        # Guardar la imagen en memoria (PNG)
-        buffer_png = BytesIO()
-        img.save(buffer_png, format="PNG")
-        buffer_png.seek(0)
-
-        # Crear un archivo PDF con la imagen del QR
-        buffer_pdf = BytesIO()
-        pdf_canvas = canvas.Canvas(buffer_pdf, pagesize=letter)
-        img_temp = BytesIO()
-        img.save(img_temp, format="PNG")
-        img_temp.seek(0)
-        pdf_canvas.drawImage(img_temp, 100, 500, width=200, height=200)
-        pdf_canvas.save()
-        buffer_pdf.seek(0)
-
-        # Opciones de descarga
+        # Botón para descargar como imagen
         st.download_button(
-            label="Descargar como Imagen (PNG)",
-            data=buffer_png,
+            label="Descargar QR como imagen",
+            data=buffer,
             file_name="codigo_qr.png",
             mime="image/png"
         )
 
+        # Crear PDF
+        pdf_buffer = BytesIO()
+        c = canvas.Canvas(pdf_buffer, pagesize=letter)
+        temp_image_path = "temp_qr.png"
+        img.save(temp_image_path)  # Guardar la imagen temporalmente
+        c.drawImage(temp_image_path, 100, 500, width=200, height=200)
+        c.drawString(100, 450, f"Enlace: {link}")
+        c.save()
+
+        # Botón para descargar PDF
+        pdf_buffer.seek(0)
         st.download_button(
-            label="Descargar como PDF",
-            data=buffer_pdf,
+            label="Descargar QR como PDF",
+            data=pdf_buffer,
             file_name="codigo_qr.pdf",
             mime="application/pdf"
         )
-    else:
-        st.warning("Por favor, introduce un enlace válido.")
 
+        # Eliminar la imagen temporal
+        os.remove(temp_image_path)
+    else:
+        st.error("Por favor, introduce un enlace válido.")
