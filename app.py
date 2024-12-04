@@ -28,9 +28,14 @@ if st.button("Generar QR"):
         qr.add_data(link)
         qr.make(fit=True)
         img = qr.make_image(fill_color=color_frontal, back_color=color_fondo)
-        
+
+        # Convertir la imagen en un objeto BytesIO para Streamlit
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+
         # Mostrar la imagen en Streamlit
-        st.image(img, caption="Código QR generado")
+        st.image(buffer, caption="Código QR generado")
 
         # Guardar la imagen en memoria (PNG)
         buffer_png = BytesIO()
