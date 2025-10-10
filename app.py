@@ -1,4 +1,4 @@
-# app_qr_logo.py
+# app_qr_logo_badge.py
 import streamlit as st
 import qrcode
 from qrcode.image.pil import PilImage
@@ -8,223 +8,120 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 
-# -------------------------
-# Utilidades
-# -------------------------
-def generar_qr(
-    link: str,
-    fill_color: str = "#000000",
-    back_color: str = "#FFFFFF",
-    version: int | None = None,
-    box_size: int = 10,
-    border: int = 4,
-    error_correction=qrcode.constants.ERROR_CORRECT_H,  # H para tolerar logo al centro
-) -> Image.Image:
+# ----------------- Utilidades -----------------
+def render_qr_base(text, fill="#000000", back="#FFFFFF", version=None, box_size=12, border=4):
     qr = qrcode.QRCode(
-        version=version,  # None/auto si version es None
-        error_correction=error_correction,
+        version=version,  # None -> auto
+        error_correction=qrcode.constants.ERROR_CORRECT_H,  # tolera logo/disco central
         box_size=box_size,
         border=border,
     )
-    qr.add_data(link)
+    qr.add_data(text)
     qr.make(fit=True)
-    img: PilImage = qr.make_image(fill_color=fill_color, back_color=back_color, image_factory=PilImage)
-    pil_img: Image.Image = img.get_image()  # Asegura objeto PIL puro
-    return pil_img.convert("RGBA")
+    pil = qr.make_image(fill_color=fill, back_color=back, image_factory=PilImage).get_image()
+    return pil.convert("RGBA")
 
-def preparar_logo(
-    logo_img: Image.Image,
-    target_side: int,
-    circular: bool,
-    add_outline: bool,
-    outline_pad_px: int,
-    outline_color: str = "white",
-) -> Image.Image:
+def place_center_badge(qr_img: Image.Image, logo_img: Image.Image,
+                       disk_scale=0.30,       # 30% del lado del QR (disco blanco)
+                       logo_in_disk=0.72,     # 72% del diámetro del disco (logo)
+                       disk_shape="circle",   # circle | rounded
+                       disk_color=(255,255,255,255)):
     """
-    - target_side: lado mayor del logo final (px) antes de halo/outline
-    - circular: si True, recorta en círculo
-    - add_outline: si True, añade halo/blanco de seguridad
-    """
-    # Convertimos a RGBA y redimensionamos
-    logo = logo_img.convert("RGBA")
-    logo = ImageOps.contain(logo, (target_side, target_side))  # preserva proporción
-
-    # Máscara para forma circular (o rectangular con canal alfa)
-    if circular:
-        mask = Image.new("L", logo.size, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, logo.size[0], logo.size[1]), fill=255)
-    else:
-        # borde suave para esquinas si no circular
-        mask = Image.new("L", logo.size, 255)
-
-    # Aplicamos máscara a logo para bordes limpios
-    logo = Image.composite(logo, Image.new("RGBA", logo.size, (0, 0, 0, 0)), mask)
-
-    if add_outline:
-        # Creamos un lienzo más grande con halo blanco (mejora legibilidad del QR)
-        W, H = logo.size
-        bg = Image.new("RGBA", (W + 2 * outline_pad_px, H + 2 * outline_pad_px), (0, 0, 0, 0))
-        bg_draw = ImageDraw.Draw(bg)
-        if circular:
-            bg_draw.ellipse(
-                (0, 0, bg.size[0] - 1, bg.size[1] - 1),
-                fill=outline_color,
-            )
-        else:
-            # rectángulo con esquinas redondeadas
-            radius = int(min(bg.size) * 0.18)
-            bg_draw.rounded_rectangle(
-                (0, 0, bg.size[0] - 1, bg.size[1] - 1),
-                radius=radius,
-                fill=outline_color,
-            )
-        bg.paste(logo, (outline_pad_px, outline_pad_px), logo)
-        return bg
-
-    return logo
-
-def incrustar_logo(qr_img: Image.Image, logo_img: Image.Image, logo_scale: float = 0.22,
-                   circular: bool = True, add_outline: bool = True, outline_pad_px: int = 8) -> Image.Image:
-    """
-    - logo_scale: proporción del lado del QR que ocupará el logo (0.15–0.30 recomendado con EC=H)
+    disk_scale = fracción del lado del QR ocupada por el disco blanco central.
+    logo_in_disk = fracción del diámetro del disco ocupada por el logo.
     """
     qr = qr_img.copy().convert("RGBA")
     W, H = qr.size
-    target_side = int(min(W, H) * logo_scale)
+    side = min(W, H)
 
-    logo_ready = preparar_logo(
-        logo_img=logo_img,
-        target_side=target_side,
-        circular=circular,
-        add_outline=add_outline,
-        outline_pad_px=outline_pad_px,
-        outline_color="white",
-    )
+    # 1) Disco blanco
+    D = int(side * disk_scale)  # diámetro disco
+    disk = Image.new("RGBA", (D, D), (0,0,0,0))
+    draw = ImageDraw.Draw(disk)
+    if disk_shape == "circle":
+        draw.ellipse((0, 0, D-1, D-1), fill=disk_color)
+    else:
+        r = int(D * 0.22)
+        draw.rounded_rectangle((0, 0, D-1, D-1), radius=r, fill=disk_color)
 
-    lw, lh = logo_ready.size
-    pos = ((W - lw) // 2, (H - lh) // 2)
-    qr.alpha_composite(logo_ready, dest=pos)
+    # 2) Logo dentro del disco (conservar proporción y anti alias)
+    logo = logo_img.convert("RGBA")
+    logo_side = int(D * logo_in_disk)
+    logo = ImageOps.contain(logo, (logo_side, logo_side))
+    # centrar logo sobre el disco
+    lx = (D - logo.width) // 2
+    ly = (D - logo.height) // 2
+    disk.alpha_composite(logo, (lx, ly))
+
+    # 3) Componer al centro del QR
+    x = (W - D) // 2
+    y = (H - D) // 2
+    qr.alpha_composite(disk, (x, y))
     return qr
 
 def pil_to_png_bytes(img: Image.Image) -> BytesIO:
     buf = BytesIO()
     img.save(buf, format="PNG")
-    buf.seek(0)
-    return buf
+    buf.seek(0); return buf
 
-def png_to_pdf_bytes(png_buf: BytesIO, page_size=letter, qr_size_pts=200, x=100, y=500, caption: str | None = None) -> BytesIO:
+def png_to_pdf_bytes(png_buf: BytesIO, page_size=letter, qr_size_pts=280, x=100, y=470, caption=None):
     pdf = BytesIO()
     c = canvas.Canvas(pdf, pagesize=page_size)
-    img_reader = ImageReader(png_buf)
-    c.drawImage(img_reader, x, y, width=qr_size_pts, height=qr_size_pts, mask='auto')
+    c.drawImage(ImageReader(png_buf), x, y, width=qr_size_pts, height=qr_size_pts, mask='auto')
     if caption:
         c.setFont("Helvetica", 10)
-        c.drawString(x, y - 18, caption)
-    c.save()
-    pdf.seek(0)
-    return pdf
+        c.drawString(x, y-18, caption)
+    c.save(); pdf.seek(0); return pdf
 
-# -------------------------
-# UI Streamlit
-# -------------------------
-st.set_page_config(page_title="Generador de QR con Logo", page_icon="🍏", layout="centered")
-st.title("Generador de Códigos QR con Logo")
+# ----------------- UI -----------------
+st.set_page_config(page_title="QR tipo badge (logo centrado)", page_icon="🟢")
 
-with st.form("qr_form"):
-    link = st.text_input("Enlace o texto a codificar", placeholder="https://fruttofoods.com/...")
-    col1, col2 = st.columns(2)
-    with col1:
-        fill_color = st.color_picker("Color del QR", "#000000")
-        box_size = st.slider("Tamaño de módulo (box_size)", 6, 16, 10)
-        border = st.slider("Borde (módulos)", 2, 8, 4)
-    with col2:
-        back_color = st.color_picker("Color de fondo", "#FFFFFF")
-        version = st.selectbox("Versión del QR (auto recomendado)", options=["Auto"] + list(range(1, 40)), index=0)
+st.title("QR con logo centrado estilo ‘badge’")
+
+with st.form("qr"):
+    text = st.text_input("Texto/URL", "https://fruttofoods.com")
+    colA, colB = st.columns(2)
+    with colA:
+        fill = st.color_picker("Color del QR", "#000000")
+        back = st.color_picker("Fondo", "#FFFFFF")
+        version = st.selectbox("Versión (auto recomendado)", ["Auto"] + list(range(1, 40)), index=0)
         version = None if version == "Auto" else int(version)
+    with colB:
+        box_size = st.slider("Box size (módulo)", 8, 16, 12)
+        border = st.slider("Borde (módulos)", 3, 8, 4)
+        disk_scale = st.slider("Tamaño del disco central (%)", 20, 38, 30) / 100.0
+        logo_in_disk = st.slider("Logo dentro del disco (%)", 60, 85, 72) / 100.0
 
-    st.markdown("### Logo (opcional)")
-    logo_file = st.file_uploader("Sube tu logo (PNG/JPG con fondo transparente recomendado)", type=["png", "jpg", "jpeg"])
-    col3, col4, col5 = st.columns([1,1,1])
-    with col3:
-        logo_scale = st.slider("Escala del logo", 10, 35, 22, help="Porcentaje del lado del QR (recomendado 15–30).") / 100.0
-    with col4:
-        circular = st.toggle("Logo circular", value=True)
-    with col5:
-        add_outline = st.toggle("Halo blanco", value=True)
-    outline_pad = st.slider("Grosor halo (px)", 0, 24, 8, help="Anillo/blanco de seguridad alrededor del logo.")
+    logo_file = st.file_uploader("Sube tu logo (PNG con transparencia ideal)", type=["png","jpg","jpeg"])
+    shape = st.radio("Forma del disco", ["circle", "rounded"], horizontal=True, index=0)
 
-    generar = st.form_submit_button("Generar QR", use_container_width=True)
+    go = st.form_submit_button("Generar", use_container_width=True)
 
-if generar:
-    if not link.strip():
-        st.error("Por favor, introduce un enlace o texto válido.")
+if go:
+    if not text.strip():
+        st.error("Dame un texto o URL válido, por fa.")
         st.stop()
 
-    # 1) Generar QR base con alta tolerancia de error
-    qr_img = generar_qr(
-        link,
-        fill_color=fill_color,
-        back_color=back_color,
-        version=version,
-        box_size=box_size,
-        border=border,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-    )
+    qr_base = render_qr_base(text, fill=fill, back=back, version=version, box_size=box_size, border=border)
 
-    # 2) Incrustar logo si hay archivo
-    final_img = qr_img
-    if logo_file is not None:
-        try:
-            logo = Image.open(logo_file)
-            final_img = incrustar_logo(
-                qr_img=qr_img,
-                logo_img=logo,
-                logo_scale=logo_scale,
-                circular=circular,
-                add_outline=add_outline,
-                outline_pad_px=outline_pad,
-            )
-        except Exception as e:
-            st.warning(f"No se pudo procesar el logo ({e}). Se mostrará el QR sin logo.")
+    if logo_file is None:
+        st.warning("Sube el logo verde para ver el badge completo. Por ahora muestro solo el QR.")
+        final_img = qr_base
+    else:
+        logo_img = Image.open(logo_file)
+        final_img = place_center_badge(qr_base, logo_img, disk_scale=disk_scale, logo_in_disk=logo_in_disk, disk_shape=shape)
 
-    # 3) Mostrar preview
-    st.image(final_img, caption="Código QR generado", use_column_width=True)
+    st.image(final_img, caption="QR generado", use_column_width=True)
 
-    # 4) Descargas (PNG y PDF) – sin archivos temporales
     png_buf = pil_to_png_bytes(final_img)
-    st.download_button(
-        "Descargar PNG",
-        data=png_buf,
-        file_name="codigo_qr.png",
-        mime="image/png",
-        use_container_width=True,
-    )
+    st.download_button("Descargar PNG", data=png_buf, file_name="qr_badge.png", mime="image/png", use_container_width=True)
 
-    pdf_buf = png_to_pdf_bytes(
-        png_buf,
-        page_size=letter,
-        qr_size_pts=260,  # tamaño del QR en el PDF (points)
-        x=100, y=480,
-        caption=f"Enlace: {link}",
-    )
-    st.download_button(
-        "Descargar PDF",
-        data=pdf_buf,
-        file_name="codigo_qr.pdf",
-        mime="application/pdf",
-        use_container_width=True,
-    )
+    pdf_buf = png_to_pdf_bytes(png_buf, caption=f"Enlace: {text}")
+    st.download_button("Descargar PDF", data=pdf_buf, file_name="qr_badge.pdf", mime="application/pdf", use_container_width=True)
 
-# -------------------------
-# Tips técnicos (render rápido y legibilidad)
-# -------------------------
-st.markdown(
-"""
-**Sugerencias de uso**
-- Mantén **ERROR_CORRECT_H** (ya configurado) cuando incrustes logos ≥15% del lado.
-- El **halo blanco** ayuda a que el lector de QR no se confunda con los píxeles del logo.
-- Usa colores con **alto contraste** (QR oscuro sobre fondo claro). Si usas fondo oscuro, que el QR sea claro.
-- Para impresión nítida, aumenta `box_size` (ej. 14–16) y luego reescala la imagen fuera de la app si lo necesitas.
-"""
-)
+st.markdown("""
+**Notas rápidas**
+- EC=**H** ya está activado para tolerar el disco/logo central.
+- Si el lector falla, reduce `disk_scale` o aumenta `border`/`box_size`.
+- Para impresión: sube `box_size` (p. ej. 14–16) y exporta PNG grande.
+""")
