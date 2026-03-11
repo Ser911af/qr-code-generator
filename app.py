@@ -125,7 +125,7 @@ def png_to_pdf_bytes(png_buf, page_size=letter, qr_size_pts=300, x=120, y=460, c
 st.set_page_config(page_title="Frutto QR Studio", page_icon="🍃", layout="centered")
 
 # ── Brand CSS ───────────────────────────────────────────────
-st.markdown("""
+st.html("""
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* Global font */
@@ -331,7 +331,7 @@ st.markdown("""
     word-break: break-all;
   }
 </style>
-""", unsafe_allow_html=True)
+""")
 
 # ── Redirect handler ────────────────────────────────────────
 params = st.query_params
