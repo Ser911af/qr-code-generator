@@ -476,14 +476,14 @@ with tab2:
 
     st.markdown("""
     <div class="warn-card">
-      <p>📞 <strong>Formato del número:</strong> incluí el código de país sin + ni espacios.
-      Ej: Argentina 54 11 → <code>5491112345678</code></p>
+      <p>📞 <strong>Formato del número:</strong> ingresa el código de país sin + ni espacios.
+      Ej: Miami / US → <code>13054567890</code> &nbsp;|&nbsp; Colombia → <code>573001234567</code></p>
     </div>
     """, unsafe_allow_html=True)
 
     with st.form("wa"):
-        phone = st.text_input("Número de WhatsApp", placeholder="5491112345678",
-                              help="Código de país + código de área + número. Sin +, sin espacios.")
+        phone = st.text_input("Número de WhatsApp", placeholder="13054567890",
+                              help="Código de país + número. Sin +, sin espacios. Ej: 1 305 456 7890 → 13054567890")
         message = st.text_area("Mensaje pre-cargado (opcional)",
                                placeholder="Hola! Me comunico desde el packaging de Frutto Foods...",
                                help="El cliente verá este texto listo para enviar cuando abra el chat.")
