@@ -375,7 +375,7 @@ if not st.session_state.auth:
 st.markdown("""
 <div class="brand-header">
   <h1>🍃 Frutto QR Studio</h1>
-  <p>Generá QR con logo · Links de WhatsApp · QR dinámicos actualizables</p>
+  <p>Genera QR con logo · Links de WhatsApp · QR dinámicos actualizables</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -388,12 +388,12 @@ with tab1:
     st.markdown("""
     <div class="info-card">
       <h4>¿Qué hace esta sección?</h4>
-      <p>Genera un código QR personalizado a partir de cualquier texto o URL. Podés subir el logo de Frutto
-      para que aparezca integrado en el centro del QR. Luego descargás el resultado en PNG o PDF.</p>
+      <p>Genera un código QR personalizado a partir de cualquier texto o URL. Puedes subir el logo de Frutto
+      para que aparezca integrado en el centro del QR. Luego descarga el resultado en PNG o PDF.</p>
       <ul>
         <li><strong>URL corta</strong> → QR menos denso, más fácil de escanear.</li>
-        <li><strong>Con logo</strong> → activá la corrección de error alta (ya viene activada por defecto).</li>
-        <li><strong>Para impresión</strong> → usá box size 12 o más y descargá en PDF.</li>
+        <li><strong>Con logo</strong> → activa la corrección de error alta (ya viene activada por defecto).</li>
+        <li><strong>Para impresión</strong> → usa box size 12 o más y descarga en PDF.</li>
       </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -434,13 +434,13 @@ with tab1:
 
     if go:
         if not text.strip():
-            st.error("Escribí un texto o URL válido.")
+            st.error("Escribe un texto o URL válido.")
             st.stop()
         with st.spinner("Generando QR..."):
             qr = make_qr_matrix(text, version=version, border=border, box_size=box_size)
             base = render_qr_rounded(qr, fill, back) if (rounded_modules and ROUNDED_OK) else render_qr_square(qr, fill, back)
             if logo_file is None:
-                st.markdown('<div class="warn-card"><p>💡 <strong>Sin logo:</strong> Subí un PNG del logo para el acabado profesional. Mostrando QR base.</p></div>', unsafe_allow_html=True)
+                st.markdown('<div class="warn-card"><p>💡 <strong>Sin logo:</strong> Sube un PNG del logo para el acabado profesional. Mostrando QR base.</p></div>', unsafe_allow_html=True)
                 final_img = base
             else:
                 logo = Image.open(logo_file)
@@ -465,11 +465,11 @@ with tab2:
     <div class="info-card">
       <h4>¿Qué hace esta sección?</h4>
       <p>Genera un link especial de WhatsApp (<code>wa.me</code>) que al tocarlo abre un chat directo
-      con el número indicado. Podés incluir un mensaje pre-cargado para que el cliente no tenga que escribir nada.</p>
+      con el número indicado. Puedes incluir un mensaje pre-cargado para que el cliente no tenga que escribir nada.</p>
       <ul>
         <li>Ideal para packaging, flyers o redes sociales.</li>
-        <li>El QR generado acá es <strong>estático</strong>: si cambiás el número o mensaje, hay que rehacer el QR.</li>
-        <li>Para un link que no cambie aunque el número cambie, usá <strong>Links Dinámicos</strong>.</li>
+        <li>El QR generado aquí es <strong>estático</strong>: si cambias el número o mensaje, hay que rehacer el QR.</li>
+        <li>Para un link que no cambie aunque el número cambie, usa <strong>Links Dinámicos</strong>.</li>
       </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -491,7 +491,7 @@ with tab2:
 
     if go_wa:
         if not phone.strip():
-            st.error("Ingresá un número de teléfono.")
+            st.error("Ingresa un número de teléfono.")
         else:
             wa_url = f"https://wa.me/{phone.strip()}"
             if message.strip():
@@ -530,8 +530,8 @@ with tab3:
     <div class="info-card">
       <h4>¿Qué son los Links Dinámicos?</h4>
       <p>Un QR dinámico siempre apunta a la misma URL fija (la de esta app), pero esa URL
-      redirige automáticamente a la dirección real que vos configurás acá.</p>
-      <p style="margin-top:8px;"><strong>La ventaja clave:</strong> si el destino cambia, sólo actualizás el link acá —
+      redirige automáticamente a la dirección real que configuras aquí.</p>
+      <p style="margin-top:8px;"><strong>La ventaja clave:</strong> si el destino cambia, solo actualizas el link aquí —
       el QR impreso en packaging o folletería <strong>no hay que rehacerlo</strong>.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -541,29 +541,29 @@ with tab3:
     <div class="step-card">
       <div class="step-num">1</div>
       <div class="step-text">
-        <strong>Creás un slug (nombre corto)</strong>
+        <strong>Crea un slug (nombre corto)</strong>
         <p>Por ejemplo: <code>promo</code>, <code>menu</code>, <code>frutto2026</code>. Este nombre nunca cambia.</p>
       </div>
     </div>
     <div class="step-card">
       <div class="step-num">2</div>
       <div class="step-text">
-        <strong>Asociás el slug a una URL destino</strong>
+        <strong>Asocia el slug a una URL destino</strong>
         <p>Ej: slug <code>promo</code> → <code>https://fruttofoods.com/promo-verano</code></p>
       </div>
     </div>
     <div class="step-card">
       <div class="step-num">3</div>
       <div class="step-text">
-        <strong>Generás e imprimís el QR del slug</strong>
+        <strong>Genera e imprime el QR del slug</strong>
         <p>El QR codifica: <code>{app_url}/?r=promo</code> — esta URL nunca va a cambiar.</p>
       </div>
     </div>
     <div class="step-card">
       <div class="step-num">4</div>
       <div class="step-text">
-        <strong>Cuando el destino cambia, editás el slug acá</strong>
-        <p>Cambiás la URL destino y guardás. El QR ya impreso sigue funcionando apuntando al nuevo destino.</p>
+        <strong>Cuando el destino cambia, edita el slug aquí</strong>
+        <p>Cambia la URL destino y guarda. El QR ya impreso sigue funcionando apuntando al nuevo destino.</p>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -593,7 +593,7 @@ with tab3:
     else:
         st.markdown("""
         <div class="accent-card">
-          <p>Todavía no hay links dinámicos. Creá el primero abajo.</p>
+          <p>Todavía no hay links dinámicos. Crea el primero abajo.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -603,7 +603,7 @@ with tab3:
     st.markdown('<p class="section-label">Crear o editar link</p>', unsafe_allow_html=True)
     st.markdown("""
     <div class="warn-card">
-      <p>💡 Si ingresás un slug que ya existe, se actualiza la URL destino (sin borrar el QR impreso).</p>
+      <p>💡 Si ingresas un slug que ya existe, se actualiza la URL destino (sin borrar el QR impreso).</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -615,7 +615,7 @@ with tab3:
 
     if save:
         if not new_slug.strip() or not new_dest.strip():
-            st.error("Completá los dos campos.")
+            st.error("Completa los dos campos.")
         else:
             clean_slug = new_slug.strip().lower().replace(" ", "-")
             links[clean_slug] = new_dest.strip()
@@ -630,7 +630,7 @@ with tab3:
                 """, unsafe_allow_html=True)
                 st.rerun()
             else:
-                st.error("Error al guardar en GitHub. Verificá el token.")
+                st.error("Error al guardar en GitHub. Verifica el token.")
 
     # ── Generate QR for a slug ──
     if links:
@@ -638,8 +638,8 @@ with tab3:
         st.markdown('<p class="section-label">Generar QR de un link dinámico</p>', unsafe_allow_html=True)
         st.markdown("""
         <div class="info-card">
-          <h4>Este es el QR que imprimís</h4>
-          <p>Descargá este QR y usalo en packaging, flyers o donde necesites. Nunca vas a tener que rehacerlo
+          <h4>Este es el QR que imprimes</h4>
+          <p>Descarga este QR y úsalo en packaging, flyers o donde necesites. No tendrás que rehacerlo
           aunque cambies la URL destino desde esta app.</p>
         </div>
         """, unsafe_allow_html=True)
